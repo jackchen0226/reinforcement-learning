@@ -42,7 +42,7 @@ class DQNAgent:
         model.add(Dense(32, activation='relu'))
         #model.add(Dropout(0.1))
         model.add(Dense(self.action_size, activation='linear'))
-        model.compile(loss=self._huber_loss,
+        model.compile(loss='mse',
                       optimizer= Adam(lr=self.learning_rate))
         return model
 
