@@ -15,11 +15,15 @@ class DQNAgent:
     def __init__(self, state_size, action_size):
         self.state_size = state_size
         self.action_size = action_size
-        self.memory = deque(maxlen=2000)
+        self.memory = deque(maxlen=4000)
+        self.highest_score = {
+                "indices" : deque(maxlen=32),
+                "score" : deque(maxlen=32)
+                }
         self.gamma = 0.95    # discount rate
         self.epsilon = 1.0  # exploration rate
-        self.epsilon_min = 0.0
-        self.epsilon_decay = 0.995
+        self.epsilon_min = 0.001
+        self.epsilon_decay = 0.998
         self.learning_rate = 0.001
         self.model = self._build_model()
         self.target_model = self._build_model()
@@ -48,6 +52,15 @@ class DQNAgent:
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
+        index = len(self.memory) - 1
+        try:
+            if max(self.highest_score["score"]) <= reward:
+                self.highest_score["score"].append(reward)
+                self.highest_score["indices"].append(index)
+        except ValueError:
+            self.highest_score["score"].append(reward)
+            self.highest_score["indices"].append(index)
+
 
     def act(self, state):
         if np.random.rand() <= self.epsilon:
@@ -57,6 +70,14 @@ class DQNAgent:
 
     def replay(self, batch_size):
         minibatch = random.sample(self.memory, batch_size)
+        """
+        if random.choice((True, False)):
+            minibatch = random.sample(self.memory, batch_size)
+        else:
+            minibatch = deque(maxlen=32)
+            for i in self.highest_score["indices"]:
+                minibatch.append(self.memory[i])
+        """
         for state, action, reward, next_state, done in minibatch:
             target = self.model.predict(state)
             if done:
@@ -66,7 +87,13 @@ class DQNAgent:
                 t = self.target_model.predict(next_state)[0]
                 target[0][action] = reward + self.gamma * t[np.argmax(a)]
             self.model.fit(state, target, epochs=1, verbose=0)
+
+    def epsilon_update(self):
         if self.epsilon > self.epsilon_min:
+            # scale = epsilon ** number replays
+            # np.exp(-1) = epsilon ** number replays
+            # -1 = number replays * np.log(epsilon)
+            # epsilon = np.exp(-1 / number replays)
             self.epsilon *= self.epsilon_decay
 
     def load(self, name):
@@ -75,10 +102,13 @@ class DQNAgent:
     def save(self, name):
         self.model.save_weights(name)
 
+    def highest_score():
+        x = deque(maxlen=32)
+
 
 if __name__ == "__main__":
     env = gym.make('CartPole-v1')
-    env = wrappers.Monitor(env, '/tmp/cartpolev1-experiment-1')
+    env = wrappers.Monitor(env, 'cartpolev1-experiment-3')
     state_size = env.observation_space.shape[0]
     action_size = env.action_space.n
     agent = DQNAgent(state_size, action_size)
@@ -89,7 +119,7 @@ if __name__ == "__main__":
     for e in range(EPISODES):
         state = env.reset()
         state = np.reshape(state, [1, state_size])
-        for time in range(500):
+        for time in range(750):
             #env.render()
             action = agent.act(state)
             next_state, reward, done, _ = env.step(action)
@@ -102,7 +132,8 @@ if __name__ == "__main__":
                 print("episode: {}/{}, score: {}, e: {:.2}"
                       .format(e, EPISODES, time, agent.epsilon))
                 break
-        if len(agent.memory) > batch_size:
-            agent.replay(batch_size)
+            if len(agent.memory) > batch_size:
+                agent.replay(batch_size)
+        agent.epsilon_update()
         # if e % 10 == 0:
         #     agent.save("./save/cartpole-ddqn.h5")
