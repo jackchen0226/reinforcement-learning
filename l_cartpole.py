@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+""" Simple Q Learning Network """
 import random
 import gym
 import numpy as np
