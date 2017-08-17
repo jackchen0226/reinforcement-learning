@@ -109,7 +109,7 @@ class DQNAgent:
 if __name__ == "__main__":
     env = gym.make('CartPole-v1')
     env = wrappers.Monitor(env, 'cartpolev1-experiment-4', force=True)
-    state_size = env.cbservation_space.shape[0]
+    state_size = env.observation_space.shape[0]a
     action_size = env.action_space.n
     agent = DQNAgent(state_size, action_size)
     # agent.load("./save/cartpole-ddqn.h5")
