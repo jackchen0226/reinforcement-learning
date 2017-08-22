@@ -1,5 +1,5 @@
 import gym
-#from gym import wrappers
+from gym import wrappers
 import random
 import numpy as np
 import tflearn
@@ -10,9 +10,9 @@ from collections import Counter
 
 LR = 1e-3
 env = gym.make("CartPole-v0")
-#env = wrappers.Monitor(env, 'cartpolev0-experiment', force=True)
+env = wrappers.Monitor(env, 'cartpolev0-experiment', force=True)
 env.reset()
-goal_steps = 500
+goal_steps = 750
 score_requirement = 50
 initial_games = 10000
 
@@ -114,7 +114,7 @@ def train_model(training_data, model=False):
     if not model:
         model = neural_network_model(input_size = len(X[0]))
     
-    model.fit({'input': X}, {'targets': y}, n_epoch=8, snapshot_step=500, show_metric=True, run_id='openai_learning')
+    model.fit({'input': X}, {'targets': y}, n_epoch=10, snapshot_step=500, show_metric=True, run_id='openai_learning')
     return model
 
 if __name__ == "__main__":
