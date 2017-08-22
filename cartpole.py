@@ -9,7 +9,7 @@ from keras.layers import Dense, Dropout
 from keras.optimizers import Adam, RMSprop
 from keras import backend as K
 
-EPISODES = 4000
+EPISODES = 2000
 
 
 class DQNAgent:
@@ -21,7 +21,7 @@ class DQNAgent:
                 "indices" : deque(maxlen=32),
                 "score" : deque(maxlen=32)
                 }
-        self.gamma = 0.95    # discount rate
+        self.gamma = 0.98    # discount rate
         self.epsilon = 1.0  # exploration rate
         self.epsilon_min = 0.001
         self.epsilon_decay = 0.998
@@ -109,7 +109,7 @@ class DQNAgent:
 
 if __name__ == "__main__":
     env = gym.make('CartPole-v1')
-    env = wrappers.Monitor(env, 'cartpolev1-experiment-4', force=True)
+    #env = wrappers.Monitor(env, 'cartpolev1-experiment-4', force=True)
     state_size = env.observation_space.shape[0]
     action_size = env.action_space.n
     agent = DQNAgent(state_size, action_size)
@@ -120,7 +120,7 @@ if __name__ == "__main__":
     for e in range(EPISODES):
         state = env.reset()
         state = np.reshape(state, [1, state_size])
-        for time in range(750):
+        for time in range(500):
             #env.render()
             action = agent.act(state)
             next_state, reward, done, _ = env.step(action)

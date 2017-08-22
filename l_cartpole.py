@@ -15,10 +15,10 @@ class DQNAgent:
         self.state_size = state_size
         self.action_size = action_size
         self.memory = deque(maxlen=2000)
-        self.gamma = 0.95    # discount rate
+        self.gamma = 0.98    # discount rate
         self.epsilon = 1.0  # exploration rate
         self.epsilon_min = 0.001
-        self.epsilon_decay = 0.995
+        self.epsilon_decay = 0.998
         self.learning_rate = 0.001
         self.model = self._build_model()
 
@@ -63,6 +63,7 @@ class DQNAgent:
 
 if __name__ == "__main__":
     env = gym.make('CartPole-v0')
+    env = wrappers.Monitor(env, 'cartpolev0', force=True)
     state_size = env.observation_space.shape[0]
     action_size = env.action_space.n
     agent = DQNAgent(state_size, action_size)
@@ -85,7 +86,7 @@ if __name__ == "__main__":
                 print("episode: {}/{}, score: {}, e: {:.2}"
                       .format(e, EPISODES, time, agent.epsilon))
                 break
-        if len(agent.memory) > batch_size:
-            agent.replay(batch_size)
+            if len(agent.memory) > batch_size:
+                agent.replay(batch_size)
         # if e % 10 == 0:
         #     agent.save("./save/cartpole-dqn.h5")

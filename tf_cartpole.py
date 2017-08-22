@@ -11,7 +11,7 @@ from collections import Counter
 LR = 1e-3
 env = gym.make("CartPole-v0")
 env = wrappers.Monitor(env, 'cartpolev0-experiment', force=True)
-env.reset()
+#env.reset()
 goal_steps = 750
 score_requirement = 50
 initial_games = 10000
