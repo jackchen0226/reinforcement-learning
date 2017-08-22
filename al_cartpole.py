@@ -45,6 +45,7 @@ class Agent(object):
         self.action_pl = tf.placeholder(tf.int32, [None])
         self.reward_pl = tf.placeholder(tf.float32, [None])
         # a two-layer fully connected network
+        
         hidden_layer = layers.fully_connected(self.input_pl,
                                               hidden_size,
                                               biases_initializer=None,
