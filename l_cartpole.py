@@ -17,10 +17,10 @@ class DQNAgent:
         self.state_size = state_size
         self.action_size = action_size
         self.memory = deque(maxlen=2000)
-        self.gamma = 0.98    # discount rate
+        self.gamma = 0.95    # discount rate
         self.epsilon = 1.0  # exploration rate
         self.epsilon_min = 0.001
-        self.epsilon_decay = 0.998
+        self.epsilon_decay = 0.995
         self.learning_rate = 0.001
         self.model = self._build_model()
 
@@ -65,7 +65,7 @@ class DQNAgent:
 
 if __name__ == "__main__":
     env = gym.make('CartPole-v0')
-    env = wrappers.Monitor(env, 'cartpolev0', force=True)
+    env = wrappers.Monitor(env, 'cartpolev0-experiment', force=True)
     state_size = env.observation_space.shape[0]
     action_size = env.action_space.n
     agent = DQNAgent(state_size, action_size)
@@ -77,7 +77,7 @@ if __name__ == "__main__":
         state = env.reset()
         state = np.reshape(state, [1, state_size])
         for time in range(500):
-            # env.render()
+            env.render()
             action = agent.act(state)
             next_state, reward, done, _ = env.step(action)
             reward = reward if not done else -10
