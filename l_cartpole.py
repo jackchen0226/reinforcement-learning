@@ -7,6 +7,8 @@ from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import SGD
 
+from gym import wrappers
+
 EPISODES = 1000
 
 
