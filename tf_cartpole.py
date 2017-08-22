@@ -1,4 +1,5 @@
 import gym
+#from gym import wrappers
 import random
 import numpy as np
 import tflearn
@@ -9,6 +10,7 @@ from collections import Counter
 
 LR = 1e-3
 env = gym.make("CartPole-v0")
+#env = wrappers.Monitor(env, 'cartpolev0-experiment', force=True)
 env.reset()
 goal_steps = 500
 score_requirement = 50
@@ -127,7 +129,7 @@ if __name__ == "__main__":
         prev_obs = []
         env.reset()
         for _ in range(goal_steps):
-            #env.render()
+            env.render()
 
             if len(prev_obs)==0:
                 action = random.randrange(0,2)
