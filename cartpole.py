@@ -30,10 +30,18 @@ class DQNAgent:
         self.target_model = self._build_model()
         self.update_target_model()
 
+        def some_loss(target, pred):
+            action_1 = K.cast(K.greater(pred[:, 0], pred[:, 1]), K.floatx())
+            action_2 = 1. - action_1
+
     def _huber_loss(self, target, prediction):
         # sqrt(1+error^2)-1
         error = prediction - target
         return K.mean(K.sqrt(1+K.square(error))-1, axis=-1)
+
+    def cartpole_loss(self, target, prediction):
+        r = K.cast(K.less_equal(target, -1e4), K.floatx())
+        return -K.mean(K.log(prediction) * (1-r) * target, axis=-1)
 
     def _build_model(self):
         # Neural Net for Deep-Q learning Model
@@ -42,8 +50,8 @@ class DQNAgent:
         #model.add(Dropout(0.1))
         model.add(Dense(32, activation='relu'))
         #model.add(Dropout(0.1))
-        model.add(Dense(self.action_size, activation='linear'))
-        model.compile(loss='mse',
+        model.add(Dense(self.action_size, activation='softmax'))
+        model.compile(loss=self.cartpole_loss,
                       optimizer= Adam(lr=self.learning_rate))
         return model
 
@@ -84,9 +92,18 @@ class DQNAgent:
             if done:
                 target[0][action] = reward
             else:
+                # a is predicted reward of next state
                 a = self.model.predict(next_state)[0]
+                # t is predicted reward nof next state different model
                 t = self.target_model.predict(next_state)[0]
                 target[0][action] = reward + self.gamma * t[np.argmax(a)]
+            # 0 -> 1
+            # 1 -> 0
+            # -1 -> 1
+            # -(x-1) -> 1-x
+            target[0][1 - action] = -1e4
+            
+            
             self.model.fit(state, target, epochs=1, verbose=0)
 
     def epsilon_update(self):
