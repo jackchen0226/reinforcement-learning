@@ -17,6 +17,7 @@ class DQNAgent:
         self.state_size = state_size
         self.action_size = action_size
         self.memory = deque(maxlen=4000)
+        #self.reward_memory = deque(maxlen=4000)
         self.highest_score = {
                 "indices" : deque(maxlen=32),
                 "score" : deque(maxlen=32)
@@ -25,7 +26,7 @@ class DQNAgent:
         self.epsilon = 1.0  # exploration rate
         self.epsilon_min = 0.001
         # epsilon = np.exp(-1 / number replays)
-        self.epsilon_decay = 0.905
+        self.epsilon_decay = 0.9905
         self.learning_rate = 0.001
         self.model = self._build_model()
         self.target_model = self._build_model()
@@ -52,8 +53,8 @@ class DQNAgent:
     def _build_model(self):
         # Neural Net for Deep-Q learning Model
         model = Sequential()
-        model.add(Dense(32, input_dim=self.state_size, activation='relu'))
-        model.add(Dense(32, activation='relu'))
+        model.add(Dense(2, input_dim=self.state_size, activation='relu'))
+        #model.add(Dense(32, activation='relu'))
         model.add(Dense(self.action_size, activation='softmax'))
         model.compile(loss=self.cartpole_loss,
                       optimizer= Adam(lr=self.learning_rate))
@@ -65,6 +66,7 @@ class DQNAgent:
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
+        #self.reward_memory.append(reward)
         index = len(self.memory) - 1
         try:
             if max(self.highest_score["score"]) <= reward:
@@ -83,31 +85,43 @@ class DQNAgent:
 
     def replay(self, batch_size):
         minibatch = random.sample(self.memory, batch_size)
-        """
-        if random.choice((True, False)):
-            minibatch = random.sample(self.memory, batch_size)
-        else:
-            minibatch = deque(maxlen=32)
-            for i in self.highest_score["indices"]:
-                minibatch.append(self.memory[i])
-        """
+       	
+        r = []
+        for tup in minibatch:
+        	# List of rewards
+        	r.append(tup[2])
+        r = self.discounted_reward(r, self.gamma)
+
+        r = (r - np.mean(r)) / np.std(r)
+        # After discounting and normalizing rewards, add the new rewards them back into minibatch
+        for i, tup in enumerate(minibatch):
+        	# tup[2] is the rewards in the minibatch tuple
+        	tup = list(tup)
+        	tup[2] = r[i]
+        	tup = tuple(tup)
+        	minibatch[i] = tup
+
         for state, action, reward, next_state, done in minibatch:
+
             target = self.model.predict(state)
             if done:
                 target[0][action] = reward
+                #print(target)
             else:
                 # a is predicted reward of next state
                 a = self.model.predict(next_state)[0]
                 # t is predicted reward nof next state different model
                 t = self.target_model.predict(next_state)[0]
                 target[0][action] = reward + self.gamma * t[np.argmax(a)]
+                #print(target)
+            #print(target)
             # 0 -> 1
             # 1 -> 0
             # -1 -> 1
             # -(x-1) -> 1-x
             target[0][1 - action] = -1e4
-            
-            target[0][action] = self.discounted_reward(target[0][action], self.gamma)
+            #print(target)
+            # discount and normalize before self.model.fit()
             self.model.fit(state, target, epochs=1, verbose=0)
 
     def epsilon_update(self):

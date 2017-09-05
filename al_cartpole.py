@@ -9,12 +9,15 @@ import tensorflow.contrib.layers as layers
 
 def discounted_reward(rewards, gamma):
     """Compute the discounted reward."""
+    print(rewards)
     ans = np.zeros_like(rewards)
     running_sum = 0
     # compute the result backward
     for i in reversed(range(len(rewards))):
+        #print(rewards[i])
         running_sum = running_sum * gamma + rewards[i]
         ans[i] = running_sum
+    #print(ans)
     return ans
 
 
