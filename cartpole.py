@@ -30,27 +30,30 @@ class DQNAgent:
         self.model = self._build_model()
         self.target_model = self._build_model()
         self.update_target_model()
-
-        def some_loss(target, pred):
-            action_1 = K.cast(K.greater(pred[:, 0], pred[:, 1]), K.floatx())
-            action_2 = 1. - action_1
-
+    '''
     def _huber_loss(self, target, prediction):
         # sqrt(1+error^2)-1
         error = prediction - target
         return K.mean(K.sqrt(1+K.square(error))-1, axis=-1)
-
+    '''
     def cartpole_loss(self, target, prediction):
         r = K.cast(K.less_equal(target, -1e4), K.floatx())
         return -K.mean(K.log(prediction) * (1-r) * target, axis=-1)
+    
+    def discounted_reward(self, rewards, gamma):
+    	ans = np.zeros_like(rewards)
+    	running_sum = 0
+    	# compute the result backward
+    	for i in reversed(range(len(rewards))):
+    	    running_sum = running_sum * gamma + rewards[i]
+    	    ans[i] = running_sum
+    	return ans
 
     def _build_model(self):
         # Neural Net for Deep-Q learning Model
         model = Sequential()
         model.add(Dense(32, input_dim=self.state_size, activation='relu'))
-        #model.add(Dropout(0.1))
         model.add(Dense(32, activation='relu'))
-        #model.add(Dropout(0.1))
         model.add(Dense(self.action_size, activation='softmax'))
         model.compile(loss=self.cartpole_loss,
                       optimizer= Adam(lr=self.learning_rate))
@@ -104,7 +107,7 @@ class DQNAgent:
             # -(x-1) -> 1-x
             target[0][1 - action] = -1e4
             
-            
+            target[0][action] = self.discounted_reward(target[0][action], self.gamma)
             self.model.fit(state, target, epochs=1, verbose=0)
 
     def epsilon_update(self):
