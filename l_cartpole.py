@@ -144,15 +144,15 @@ if __name__ == "__main__":
     # agent.load("./save/cartpole-dqn.h5")
     done = False
     batch_size = 32
-    state_history = deque(maxlen=2000)
-    reward_history = deque(maxlen=2000)
-    action_history = deque(maxlen=2000)
+    #state_history = deque(maxlen=2000)
+    #reward_history = deque(maxlen=2000)
+    #action_history = deque(maxlen=2000)
     for e in range(EPISODES):
         state = env.reset()
         state = np.reshape(state, [1, state_size])
-        #state_history = []
-        #reward_history = []
-        #action_history = []
+        state_history = []
+        reward_history = []
+        action_history = []
         pred_next_state = []
         for time in range(500):
             #env.render()
