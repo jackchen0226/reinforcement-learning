@@ -9,7 +9,7 @@ import tensorflow.contrib.layers as layers
 
 def discounted_reward(rewards, gamma):
     """Compute the discounted reward."""
-    print(rewards)
+    #print(rewards)
     ans = np.zeros_like(rewards)
     running_sum = 0
     # compute the result backward
@@ -66,6 +66,7 @@ class Agent(object):
         self.variable_pls = []
         for i, var in enumerate(variables):
             self.variable_pls.append(tf.placeholder(tf.float32))
+        print(variables)
         self.gradients = tf.gradients(self.loss, variables)
         solver = tf.train.AdamOptimizer(learning_rate=alpha)
         self.update = solver.apply_gradients(zip(self.variable_pls, variables))
@@ -92,7 +93,7 @@ class Agent(object):
 
 
 def train():
-    render = True
+    render = False
     update_every = 3
     print_every = 50
     n_episodes = 500

@@ -22,10 +22,18 @@ class DQNAgent:
         self.gamma = 0.98    # discount rate
         self.epsilon = 1.0  # exploration rate
         self.epsilon_min = 0.001
-        self.epsilon_decay = 0.998
-        self.learning_rate = 0.01
+        # epsilon = np.exp(-1 / number replays)
+        self.epsilon_decay = 0.0998
+        self.learning_rate = 0.005
         self.model = self._build_model()
-
+        """
+        variables = self.model.get_weights()
+        self.weights = []
+        for i, var in enumerate(variables):
+            self.weights.append(K.placeholder(dtype='float32'))
+        self.gradients = K.gradients(self.cartpole_loss, variables)
+        self.update = 
+        """
     def discounted_reward(self, rewards, gamma):
         ans = np.zeros_like(rewards)
         running_sum = 0
@@ -37,14 +45,14 @@ class DQNAgent:
 
     def cartpole_loss(self, target, prediction):
         r = K.cast(K.less_equal(target, -1e4), K.floatx())
-        return -K.mean(K.log(prediction) * (1-r) * target, axis=-1)
+        return -K.mean(K.log(prediction + 0.001) * (1-r) * target, axis=-1)
 
     def _build_model(self):
         # Neural Net for Deep-Q learning Model
         model = Sequential()
-        model.add(Dense(24, input_dim=self.state_size, activation='relu'))
+        model.add(Dense(10, input_dim=self.state_size, activation='relu'))
         #model.add(Dense(24, activation='relu'))
-        model.add(Dense(self.action_size, activation='linear'))
+        model.add(Dense(self.action_size, activation='softmax'))
         model.compile(loss=self.cartpole_loss,
                       optimizer=keras.optimizers.Adam(lr=self.learning_rate))
         return model
@@ -60,23 +68,23 @@ class DQNAgent:
 
     #input is state and action, output is reward, just like in replay() use target[0][action]
     def replay_episode(self, state_history, reward_history, action_history, pred_next_state, done):
-
         reward = self.discounted_reward(reward_history, self.gamma)
         reward = (reward - np.mean(reward)) / np.std(reward)
+        target_f = np.zeros((1, 2))
 
-        for i, action in enumerate(action_history):
-            target = reward[i]
+        debug1 = self.model.predict(state_history[0])
+
+        for i, next_state in enumerate(pred_next_state):
+
+            target_f[0][action_history[i]] = reward[i]
+
+            target_f[0][1 - action_history[i]] = -1e4
+            self.model.fit(state_history[i], target_f, epochs=5, verbose=0)
             
-            if not done:
-                target = (reward[i] + self.gamma *
-                          np.amax(self.model.predict(pred_next_state[i])[0]))
-            
-            target_f = self.model.predict(state_history[i])
+        
+        debug2 = self.model.predict(state_history[0])
 
-            target_f[0][action] = target
-
-            target_f[0][1 - action] = -1e4
-            self.model.fit(state_history[i], target_f, epochs=2, verbose=0)
+        print("{} + {}, {} = {}".format(debug1, action_history[0], reward[0], debug2))
 
     """
     def replay(self, batch_size):
@@ -136,9 +144,9 @@ if __name__ == "__main__":
     # agent.load("./save/cartpole-dqn.h5")
     done = False
     batch_size = 32
-    state_history = []
-    reward_history = []
-    action_history = []
+    state_history = deque(maxlen=2000)
+    reward_history = deque(maxlen=2000)
+    action_history = deque(maxlen=2000)
     for e in range(EPISODES):
         state = env.reset()
         state = np.reshape(state, [1, state_size])
@@ -152,7 +160,7 @@ if __name__ == "__main__":
             next_state, reward, done, _ = env.step(action)
             reward = reward if not done else -10
             next_state = np.reshape(next_state, [1, state_size])
-            #agent.remember(state, action, reward, next_state, done)
+            #print(state)
             state_history.append(state)
             reward_history.append(reward)
             action_history.append(action)
@@ -162,7 +170,7 @@ if __name__ == "__main__":
                 print("episode: {}/{}, score: {}, e: {:.2}"
                       .format(e, EPISODES, time, agent.epsilon))
                 break
-                agent.replay_episode(state_history, reward_history, action_history, pred_next_state, done)
-                agent.epsilon_update()
+        agent.replay_episode(state_history, reward_history, action_history, pred_next_state, done)
+        agent.epsilon_update()
         # if e % 10 == 0:
         #     agent.save("./save/cartpole-dqn.h5")
