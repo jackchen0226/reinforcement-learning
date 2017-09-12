@@ -158,7 +158,8 @@ if __name__ == "__main__":
             #env.render()
             action = agent.act(state)
             next_state, reward, done, _ = env.step(action)
-            reward = reward if not done else -10
+            #reward = reward if not done else -10
+            done and print(reward)
             next_state = np.reshape(next_state, [1, state_size])
             #print(state)
             state_history.append(state)
