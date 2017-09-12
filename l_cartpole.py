@@ -23,7 +23,7 @@ class DQNAgent:
         self.epsilon = 1.0  # exploration rate
         self.epsilon_min = 0.001
         self.epsilon_decay = 0.998
-        self.learning_rate = 0.001
+        self.learning_rate = 0.01
         self.model = self._build_model()
 
     def discounted_reward(self, rewards, gamma):
@@ -162,7 +162,7 @@ if __name__ == "__main__":
                 print("episode: {}/{}, score: {}, e: {:.2}"
                       .format(e, EPISODES, time, agent.epsilon))
                 break
-        agent.replay_episode(state_history, reward_history, action_history, pred_next_state, done)
-        agent.epsilon_update()
+                agent.replay_episode(state_history, reward_history, action_history, pred_next_state, done)
+                agent.epsilon_update()
         # if e % 10 == 0:
         #     agent.save("./save/cartpole-dqn.h5")
