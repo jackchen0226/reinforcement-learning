@@ -43,7 +43,7 @@ class DQNAgent:
         # Neural Net for Deep-Q learning Model
         model = Sequential()
         model.add(Dense(24, input_dim=self.state_size, activation='relu'))
-        model.add(Dense(24, activation='relu'))
+        #model.add(Dense(24, activation='relu'))
         model.add(Dense(self.action_size, activation='linear'))
         model.compile(loss=self.cartpole_loss,
                       optimizer=keras.optimizers.Adam(lr=self.learning_rate))
@@ -59,17 +59,20 @@ class DQNAgent:
         return np.argmax(act_values[0])  # returns action
 
     #input is state and action, output is reward, just like in replay() use target[0][action]
-    def replay_episode(self, state_history, reward_history, action_history):
+    def replay_episode(self, state_history, reward_history, action_history, pred_next_state, done):
 
-        reward = discounted_reward(reward_history, self.gamma)
-        reward = (reward - mean(reward)) / np.std(reward)
+        reward = self.discounted_reward(reward_history, self.gamma)
+        reward = (reward - np.mean(reward)) / np.std(reward)
 
-        for i, action in action_history:
+        for i, action in enumerate(action_history):
             target = reward[i]
+            
             if not done:
                 target = (reward[i] + self.gamma *
-                          np.amax(self.model.predict(state_history[i+1])[0]))
+                          np.amax(self.model.predict(pred_next_state[i])[0]))
+            
             target_f = self.model.predict(state_history[i])
+
             target_f[0][action] = target
 
             target_f[0][1 - action] = -1e4
@@ -133,13 +136,16 @@ if __name__ == "__main__":
     # agent.load("./save/cartpole-dqn.h5")
     done = False
     batch_size = 32
-
+    state_history = []
+    reward_history = []
+    action_history = []
     for e in range(EPISODES):
         state = env.reset()
         state = np.reshape(state, [1, state_size])
-        state_history = []
-        reward_history = []
-        action_history = []
+        #state_history = []
+        #reward_history = []
+        #action_history = []
+        pred_next_state = []
         for time in range(500):
             #env.render()
             action = agent.act(state)
@@ -150,13 +156,13 @@ if __name__ == "__main__":
             state_history.append(state)
             reward_history.append(reward)
             action_history.append(action)
+            pred_next_state.append(next_state)
             state = next_state
             if done:
                 print("episode: {}/{}, score: {}, e: {:.2}"
                       .format(e, EPISODES, time, agent.epsilon))
                 break
-            if len(agent.memory) > batch_size:
-                agent.replay_episode(state_history, reward_history, action_history)
+        agent.replay_episode(state_history, reward_history, action_history, pred_next_state, done)
         agent.epsilon_update()
         # if e % 10 == 0:
         #     agent.save("./save/cartpole-dqn.h5")
