@@ -18,7 +18,6 @@ class DQNAgent:
     def __init__(self, state_size, action_size):
         self.state_size = state_size
         self.action_size = action_size
-        self.memory = deque(maxlen=2000)
         self.gamma = 0.98    # discount rate
         self.epsilon = 1.0  # exploration rate
         self.epsilon_min = 0.001
@@ -26,14 +25,8 @@ class DQNAgent:
         self.epsilon_decay = 0.0998
         self.learning_rate = 0.005
         self.model = self._build_model()
-        """
-        variables = self.model.get_weights()
-        self.weights = []
-        for i, var in enumerate(variables):
-            self.weights.append(K.placeholder(dtype='float32'))
-        self.gradients = K.gradients(self.cartpole_loss, variables)
-        self.update = 
-        """
+
+
     def discounted_reward(self, rewards, gamma):
         ans = np.zeros_like(rewards)
         running_sum = 0
@@ -45,7 +38,7 @@ class DQNAgent:
 
     def cartpole_loss(self, target, prediction):
         r = K.cast(K.less_equal(target, -1e4), K.floatx())
-        return -K.mean(K.log(prediction + 0.001) * (1-r) * target, axis=-1)
+        return -K.mean(K.log(prediction + 0.001) * ((1-r) * target), axis=-1)
 
     def _build_model(self):
         # Neural Net for Deep-Q learning Model
@@ -56,9 +49,6 @@ class DQNAgent:
         model.compile(loss=self.cartpole_loss,
                       optimizer=keras.optimizers.Adam(lr=self.learning_rate))
         return model
-
-    def remember(self, state, action, reward, next_state, done):
-        self.memory.append((state, action, reward, next_state, done))
 
     def act(self, state):
         if np.random.rand() <= self.epsilon:
@@ -158,7 +148,9 @@ if __name__ == "__main__":
             #env.render()
             action = agent.act(state)
             next_state, reward, done, _ = env.step(action)
-            reward = reward if not done or time >= 199 else -10
+            #reward = reward if not done or time >= 199 else -10
+            if done and time < 199:
+                reward = -10
             done and print(reward)
             next_state = np.reshape(next_state, [1, state_size])
             #print(state)
