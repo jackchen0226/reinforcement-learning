@@ -76,40 +76,6 @@ class DQNAgent:
 
         print("{} + {}, {} = {}".format(debug1, action_history[0], reward[0], debug2))
 
-    """
-    def replay(self, batch_size):
-        minibatch = random.sample(self.memory, batch_size)
-        
-        r = []
-        for tup in minibatch:
-            # List of rewards
-            r.append(tup[2])
-        r = self.discounted_reward(r, self.gamma)
-
-        #r = (r - np.mean(r)) / np.std(r)
-        
-        # After discounting and normalizing rewards, add the new rewards them back into minibatch
-        for i, tup in enumerate(minibatch):
-            # tup[2] is the rewards in the minibatch tuple
-            tup = list(tup)
-            tup[2] = r[i]
-            tup = tuple(tup)
-            minibatch[i] = tup
-        
-        for state, action, reward, next_state, done in minibatch:
-            target = reward
-            if not done:
-                target = (reward + self.gamma *
-                          np.amax(self.model.predict(next_state)[0]))
-            target_f = self.model.predict(state)
-            target_f[0][action] = target
-
-            target_f[0][1 - action] = -1e4
-            self.model.fit(state, target_f, epochs=1, verbose=0)
-        if self.epsilon > self.epsilon_min:
-            self.epsilon *= self.epsilon_decay
-    """
-
     def epsilon_update(self):
         if self.epsilon > self.epsilon_min:
             # scale = epsilon ** number replays
@@ -127,6 +93,7 @@ class DQNAgent:
 
 if __name__ == "__main__":
     env = gym.make('CartPole-v0')
+    # RIP openai gym :(
     #env = wrappers.Monitor(env, 'cartpolev0-experiment', force=True)
     state_size = env.observation_space.shape[0]
     action_size = env.action_space.n
@@ -134,9 +101,6 @@ if __name__ == "__main__":
     # agent.load("./save/cartpole-dqn.h5")
     done = False
     batch_size = 32
-    #state_history = deque(maxlen=2000)
-    #reward_history = deque(maxlen=2000)
-    #action_history = deque(maxlen=2000)
     for e in range(EPISODES):
         state = env.reset()
         state = np.reshape(state, [1, state_size])
@@ -148,7 +112,6 @@ if __name__ == "__main__":
             #env.render()
             action = agent.act(state)
             next_state, reward, done, _ = env.step(action)
-            #reward = reward if not done or time >= 199 else -10
             if done and time < 199:
                 reward = -10
             done and print(reward)
