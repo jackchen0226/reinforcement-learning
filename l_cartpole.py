@@ -46,7 +46,7 @@ class DQNAgent:
         model.add(Dense(10, input_dim=self.state_size, activation='relu'))
         #model.add(Dense(24, activation='relu'))
         model.add(Dense(self.action_size, activation='softmax'))
-        model.compile(loss=self.cartpole_loss,
+        model.compile(loss='mse',
                       optimizer=keras.optimizers.Adam(lr=self.learning_rate))
         return model
 
