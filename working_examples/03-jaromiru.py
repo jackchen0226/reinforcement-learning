@@ -141,10 +141,9 @@ class Environment:
     def run(self, agent):
         s = self.env.reset()
         R = 0 
-        run_number = 0
 
         while True:            
-            self.env.render()
+            #self.env.render()
 
             a = agent.act(s)
 
@@ -163,8 +162,6 @@ class Environment:
                 break
 
         print("Total reward: {}".format(R))
-        print("Episode: {}".format(run_number))
-        
 
 #-------------------- MAIN ----------------------------
 PROBLEM = 'CartPole-v0'
@@ -175,8 +172,12 @@ actionCnt = env.env.action_space.n
 
 agent = Agent(stateCnt, actionCnt)
 
+episode_number = 0
+
 try:
     while True:
         env.run(agent)
+        print("Episode: {}".format(episode_number))
+        episode_number += 1
 finally:
     agent.brain.model.save("cartpole-basic.h5")
