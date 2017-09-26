@@ -178,7 +178,7 @@ if __name__ == '__main__':
     try:
         while True:
             env.run(agent)
-            print("Episode: {}".format(episode_number))
+            print("Episode: {}, e: {}".format(episode_number, agent.epsilon))
             episode_number += 1
     finally:
         #agent.brain.model.save("cartpole-basic.h5")
