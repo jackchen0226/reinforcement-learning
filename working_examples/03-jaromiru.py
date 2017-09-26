@@ -164,20 +164,22 @@ class Environment:
         print("Total reward: {}".format(R))
 
 #-------------------- MAIN ----------------------------
-PROBLEM = 'CartPole-v0'
-env = Environment(PROBLEM)
+if __name__ == '__main__':
+    PROBLEM = 'CartPole-v0'
+    env = Environment(PROBLEM)
 
-stateCnt  = env.env.observation_space.shape[0]
-actionCnt = env.env.action_space.n
+    stateCnt  = env.env.observation_space.shape[0]
+    actionCnt = env.env.action_space.n
 
-agent = Agent(stateCnt, actionCnt)
+    agent = Agent(stateCnt, actionCnt)
 
-episode_number = 0
+    episode_number = 0
 
-try:
-    while True:
-        env.run(agent)
-        print("Episode: {}".format(episode_number))
-        episode_number += 1
-finally:
-    agent.brain.model.save("cartpole-basic.h5")
+    try:
+        while True:
+            env.run(agent)
+            print("Episode: {}".format(episode_number))
+            episode_number += 1
+    finally:
+        #agent.brain.model.save("cartpole-basic.h5")
+        print('This runs if you were to save the weights')

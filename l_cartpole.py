@@ -15,15 +15,17 @@ EPISODES = 1000
 
 
 class DQNAgent:
-    def __init__(self, state_size, action_size):
+    def __init__(self, state_size, action_size, batch_size):
         self.state_size = state_size
         self.action_size = action_size
-        self.gamma = 0.95    # discount rate
+        self.batch_size = batch_size
+        self.MEMORY = deque(maxlen=100000)
+        self.gamma = 0.99    # discount rate
         self.epsilon = 1.0  # exploration rate
-        self.epsilon_min = 0.001
+        self.epsilon_min = 0.01
         # epsilon = np.exp(-1 / number replays)
-        self.epsilon_decay = 0.99
-        self.learning_rate = 1.
+        self.epsilon_decay = 0.999
+        self.learning_rate = 0.00025
         self.model = self._build_model()
 
 
@@ -50,47 +52,46 @@ class DQNAgent:
         #log_prob = K.log(good_probabilities)
         #return -K.sum(log_prob)a
 
-    def test_loss(self, target, prediction):
-        r = K.constant(np.ones((1,2)), dtype="float32")
-        r *= 5
-        return (np.array((5, 2)) - prediction) ** 2
 
     def _build_model(self):
         # Neural Net for Deep-Q learning Model
         model = Sequential()
-        model.add(Dense(10, input_dim=self.state_size, activation='relu'))
+        model.add(Dense(units=64, input_dim=self.state_size, activation='relu'))
         #model.add(Dense(24, activation='relu'))
-        model.add(keras.layers.normalization.BatchNormalization())
-        model.add(Dense(self.action_size, activation='linear'))
-        model.compile(loss=self.cartpole_loss,
-                      optimizer=keras.optimizers.Adadelta(lr=self.learning_rate))
+        #model.add(keras.layers.normalization.BatchNormalization())
+        model.add(Dense(units=self.action_size, activation='linear'))
+        model.compile(loss='mse',
+                      optimizer=keras.optimizers.RMSprop(lr=self.learning_rate))
         return model
 
     def act(self, state):
         if np.random.rand() <= self.epsilon:
             return random.randrange(self.action_size)
-        act_values = self.model.predict(state)
+        #predictOne
+        act_values = self.model.predict(state.reshape(1, self.state_size)).flatten()
         return np.argmax(act_values[0])  # returns action
 
     #input is state and action, output is reward, just like in replay() use target[0][action]
-    def replay_episode(self, state_history, reward_history, action_history):
-        reward = self.discounted_reward(reward_history, self.gamma)
-        reward = (reward - np.mean(reward)) / np.std(reward)
+    def replay_episode(self, state_history, reward_history, action_history, next_state, done):
+        #reward = self.discounted_reward(reward_history, self.gamma)
+        #reward = (reward - np.mean(reward)) / np.std(reward)
         target_f = np.zeros((1, 2))
 
         debug1 = self.model.predict(state_history[-1])
 
         for i, action in enumerate(action_history):
+            if done:
+                target_f[0][action] = reward_history[i]
+            else:
+                target_f[0][action] = reward_history[i] + self.gamma * numpy.amax(self.model.predict(next_state[i]))
 
-            target_f[0][action] = reward[i]
-
-            target_f[0][1 - action] = -1e4
-            self.model.fit(state_history[i], target_f, epochs=5, verbose=0)
+            #target_f[0][1 - action] = -1e4
+            self.model.fit(state_history[i], target_f, epochs=1, verbose=0)
             
         
         debug2 = self.model.predict(state_history[-1])
 
-        print("{} + {}, {} = {}".format(debug1, action_history[-1], reward[-1], debug2))
+        #print("{} + {}, {} = {}".format(debug1, action_history[-1], reward[-1], debug2))
 
     def epsilon_update(self):
         if self.epsilon > self.epsilon_min:
@@ -113,10 +114,10 @@ if __name__ == "__main__":
     #env = wrappers.Monitor(env, 'cartpolev0-experiment', force=True)
     state_size = env.observation_space.shape[0]
     action_size = env.action_space.n
-    agent = DQNAgent(state_size, action_size)
+    batch_size = 64
+    agent = DQNAgent(state_size, action_size, batch_size)
     # agent.load("./save/cartpole-dqn.h5")
     done = False
-    batch_size = 32
     for e in range(EPISODES):
         state = env.reset()
         state = np.reshape(state, [1, state_size])
@@ -130,10 +131,12 @@ if __name__ == "__main__":
             # Environment updates, get state and reward
             action = agent.act(state)
             next_state, reward, done, _ = env.step(action)
-            if done and time < 199:
-                reward = -10
+            #if done and time < 199:
+            #    reward = -10
             #done and print(reward)
             next_state = np.reshape(next_state, [1, state_size])
+            if done:
+                next_state = None
             # Append states, rewards, and action to history
             state_history.append(state)
             reward_history.append(reward)
@@ -144,7 +147,7 @@ if __name__ == "__main__":
                 print("episode: {}/{}, score: {}, e: {:.2}"
                       .format(e, EPISODES, time, agent.epsilon))
                 break
-        agent.replay_episode(state_history, reward_history, action_history)
+        agent.replay_episode(state_history, reward_history, action_history, pred_next_state, done)
         agent.epsilon_update()
         # if e % 10 == 0:
         #     agent.save("./save/cartpole-dqn.h5")
