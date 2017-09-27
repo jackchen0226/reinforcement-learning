@@ -37,7 +37,7 @@ class Brain:
         #model.add(Dense(output_dim=actionCnt, activation='linear'))
         model.add(Dense(activation='linear', units=actionCnt))
 
-        opt = RMSprop(lr=0.00025)
+        opt = Adam()
         model.compile(loss='mse', optimizer=opt)
 
         return model
@@ -133,6 +133,8 @@ class Agent:
         self.brain.train(x, y)
 
 #-------------------- ENVIRONMENT ---------------------
+ENV_RENDER = True
+
 class Environment:
     def __init__(self, problem):
         self.problem = problem
@@ -142,8 +144,9 @@ class Environment:
         s = self.env.reset()
         R = 0 
 
-        while True:            
-            #self.env.render()
+        while True:
+            if ENV_RENDER:
+                self.env.render()
 
             a = agent.act(s)
 
@@ -164,8 +167,9 @@ class Environment:
         print("Total reward: {}".format(R))
 
 #-------------------- MAIN ----------------------------
+PROBLEM = 'CartPole-v0'
+
 if __name__ == '__main__':
-    PROBLEM = 'CartPole-v0'
     env = Environment(PROBLEM)
 
     stateCnt  = env.env.observation_space.shape[0]
